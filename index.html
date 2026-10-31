@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECLIPTOON — La’natlangan Qasr</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:wght@500;700&display=swap');
+:root{--bg:#080608;--red:#650014;--ruby:#b00028;--gold:#c5a15b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#eee;font-family:'Cormorant Garamond',serif;overflow-x:hidden}
+#intro{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;text-align:center;padding:25px;background:linear-gradient(#08060899,#080608dd),url('castle.jpg') center/cover;transition:opacity 1.5s}
+#intro.hide{opacity:0;pointer-events:none}
+.intro-content{max-width:800px}
+.intro-title{font:900 clamp(35px,8vw,85px) Cinzel;color:#e00030;text-shadow:0 0 30px red;animation:pulse 2s infinite}
+.intro-text{font-size:clamp(20px,4vw,30px);min-height:100px}
+button{cursor:pointer;border:1px solid var(--gold);background:linear-gradient(135deg,#650014,#190007);color:#fff;padding:14px 25px;font:700 17px Cinzel;letter-spacing:1px;transition:.3s}
+button:hover{background:#a00025;box-shadow:0 0 25px #c00040}
+button:disabled{opacity:.35;cursor:not-allowed}
+#app{min-height:100vh;background:linear-gradient(#08060888,#080608df),url('castle.jpg') center/cover fixed}
+header{display:flex;justify-content:space-between;align-items:center;padding:15px 5%;border-bottom:1px solid #7d001c;background:#080608dc;gap:10px}
+.logo{font:900 25px Cinzel;color:#c90032}
+.controls{display:flex;gap:8px;align-items:center}
+.nick{color:var(--gold);font-size:17px;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.small{padding:9px 13px;font-size:13px}
+main{max-width:1050px;margin:auto;padding:25px 16px 70px}
+h1,h2,h3{font-family:Cinzel;color:#d00032;text-align:center}
+.subtitle{text-align:center;color:var(--gold);font-size:20px}
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:30px 0}
+.level{background:#10070be8;border:1px solid #650014;padding:18px 10px;text-align:center}
+.level.active{border-color:var(--gold);box-shadow:0 0 18px #8a001c}
+.level.done{border-color:#c5a15b}
+.level-name{font:700 13px Cinzel;margin:10px 0}
+#scene{min-height:430px;background:#10070bea;border:1px solid #79001e;padding:25px;position:relative;overflow:hidden;box-shadow:0 0 40px #4a0016}
+#scene:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse,transparent 25%,#0009 100%)}
+#scene>*{position:relative}
+.center{text-align:center}
+.muted{color:#c5a15b}
+.message{font-size:21px;text-align:center;margin:20px}
+.timer{font:900 30px Cinzel;color:#ff3658;text-align:center}
+.score{font:900 44px Cinzel;color:var(--gold);text-align:center;margin:10px}
+.objects{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:35px auto;max-width:600px}
+.object{min-height:85px;background:#27000d;border:1px solid #74001d;display:grid;place-items:center;font-size:35px}
+.object.found{opacity:.3;border-color:var(--gold)}
+.doors{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin:35px auto;max-width:650px}
+.door{height:190px;background:linear-gradient(90deg,#16070a,#4b0715,#16070a);border:5px ridge #76502b;display:grid;place-items:center;font-size:48px}
+.symbols{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:25px 0}
+.symbol{width:65px;height:65px;background:#28000c;border:1px solid var(--gold);font-size:28px;display:grid;place-items:center;cursor:pointer;padding:0}
+.grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));max-width:550px;margin:20px auto;gap:4px}
+.cell{aspect-ratio:1;background:#332019;border:1px solid #8c6538;color:#f5d9a0;font:bold 19px Cinzel;display:grid;place-items:center;cursor:pointer;user-select:none;padding:0}
+.cell.selected{background:#a00025}
+.cell.correct{background:#7e001b;color:#fff}
+input{width:min(100%,300px);padding:14px;background:#080608;color:#fff;border:1px solid var(--gold);font-size:20px;text-align:center}
+ol.lb{max-width:460px;margin:20px auto;padding-left:28px;font-size:21px;line-height:1.8}
+ol.lb span{float:right;color:var(--gold)}
+.fog{position:fixed;inset:0;pointer-events:none;z-index:3;background:radial-gradient(ellipse,transparent 30%,#a0002820);animation:fog 8s infinite alternate}
+@keyframes fog{to{transform:scale(1.2);opacity:.5}}
+@keyframes pulse{50%{text-shadow:0 0 50px red}}
+@media(max-width:600px){header{padding:12px}.logo{font-size:19px}#scene{padding:15px;min-height:420px}.door{height:135px}.objects{gap:7px}.cell{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.fog,.intro-title{animation:none}}
+</style>
+</head>
+<body>
+<div class="fog"></div>
+<section id="intro">
+ <div class="intro-content">
+  <h1 class="intro-title">LA’NATLANGAN QASR</h1>
+  <div class="intro-text" id="introText">Qasr seni kutmoqda…</div>
+  <button id="enter" onclick="enterGame()" hidden>🩸 QASRGA KIRISH</button>
+  <button class="small" onclick="skipIntro()">O‘tkazib yuborish</button>
+ </div>
+</section>
+<div id="app">
+<header>
+ <div class="logo">ECLIPTOON</div>
+ <div class="controls">
+  <span class="nick" id="nick"></span>
+  <button class="small" onclick="showBoard()" title="Reyting">🏆</button>
+  <button class="small" onclick="toggleSound()" id="sound">🔊</button>
+  <button class="small" onclick="resetGame()" title="Qaytadan boshlash">↻</button>
+ </div>
+</header>
+<main>
+ <h1>LA’NATLANGAN QASR</h1>
+ <div class="subtitle">Qizil oy ostidagi so‘nggi sir...</div>
+ <div class="levels" id="levels"></div>
+ <section id="scene">
+  <h2>Qasr seni kutmoqda</h2>
+  <p class="message">O‘yinni boshlash uchun qasrga kir.</p>
+  <div class="center"><button onclick="startLevel(1)">BOSHLASH</button></div>
+ </section>
+</main>
+</div>
+
+<script>
+/* ===== SOZLAMALAR: faqat shu qismni o‘zgartiring ===== */
+const FIREBASE_CONFIG={apiKey:"BU_YERGA",authDomain:"BU_YERGA",projectId:"BU_YERGA",appId:"BU_YERGA"};
+const EXPECTED_PLAYERS=1000; // taxminan nechta odam o‘ynaydi
+const PRIZES={big:{amount:400,count:3},mid:{amount:100,count:50},small:{amount:50,count:20}};
+/* ===================================================== */
+
+const names=["LA’NATLANGAN XONA","ORQANGGA QARAMAGIN","LA’NATLANGAN OYNA","PICHIRLAYOTGAN QO‘G‘IRCHOQ","SO‘NGGI LA’NAT"];
+const digits={1:'7',2:'3',3:'1',4:'9'};
+const finalCode='7319';
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+const tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.ready();tg.expand()}
+const tu=tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user;
+const inTG=!!(tu&&tu.id);
+const uid=inTG?String(tu.id):'sinov';
+const nick=tu&&tu.username?'@'+tu.username:(tu&&tu.first_name)||'mehmon';
+document.getElementById('nick').textContent=nick;
+
+let completed=JSON.parse(ls('ecliptoCompleted')||'[]');
+let levelScores=JSON.parse(ls('ecliptoScores')||'{}');
+let soundOn=true,timer=null,seconds=40,found=[],sequence=[],selected=[],currentWords=[],wordFound=[],picked=[],mistakes=0;
+const scene=document.getElementById('scene');
+const totalScore=()=>Object.values(levelScores).reduce((a,b)=>a+b,0);
+
+function save(){ls('ecliptoCompleted',JSON.stringify(completed));ls('ecliptoScores',JSON.stringify(levelScores));renderLevels()}
+function renderLevels(){
+ document.getElementById('levels').innerHTML=names.map((n,i)=>{
+  const done=completed.includes(i+1),unlocked=i===0||completed.includes(i);
+  const info=done?(digits[i+1]?'RAQAM: '+digits[i+1]:'TUGALLANDI'):unlocked?'OCHIQ':'QULFLANGAN';
+  return `<div class="level ${done?'done':''} ${unlocked?'active':''}"><div style="font-size:27px">${done?'✓':unlocked?'🩸':'🔒'}</div><div class="level-name">${i+1}. ${n}</div><div class="muted">${info}</div></div>`;
+ }).join('');
+}
+function audio(freq=180,duration=.2){
+ if(!soundOn)return;
+ try{const ctx=new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();
+ o.frequency.value=freq;o.type='sawtooth';g.gain.setValueAtTime(.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);
+ o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+duration)}catch(e){}
+}
+function toggleSound(){soundOn=!soundOn;document.getElementById('sound').textContent=soundOn?'🔊':'🔇'}
+function skipIntro(){document.getElementById('intro').classList.add('hide')}
+function enterGame(){skipIntro();startLevel(completed.length>=5?5:Math.min(completed.length+1,5))}
+
+const introLines=["Qasr seni kutmoqda…","Bu darvozadan kirgan har bir inson o‘z taqdiriga duch keladi…","Ko‘rshapalaklar uyg‘ondi. Tumanlar orasida sharpalar kezmoqda. Qizil oy ostida qadimiy la’nat yana uyg‘ondi…","SEN QO‘RQUVNI YENGA OLASANMI?"];
+let line=0;
+const introTimer=setInterval(()=>{
+ if(line<introLines.length){document.getElementById('introText').textContent=introLines[line++];audio(100,.4)}
+ else{clearInterval(introTimer);document.getElementById('enter').hidden=false}
+},2500);
+
+function startLevel(n){
+ if(n>1&&!completed.includes(n-1))return;
+ clearInterval(timer);mistakes=0;
+ [0,gameOne,gameTwo,gameThree,gameFour,gameFive][n]();
+}
+function finish(n,bonus=0){
+ clearInterval(timer);
+ const pts=Math.max(20,100-mistakes*10)+bonus;
+ levelScores[n]=pts;
+ if(!completed.includes(n))completed.push(n);
+ save();
+ scene.innerHTML=`<h2>BOSQICH TUGALLANDI</h2>
+ <p class="message">Qasrning yana bir siri ochildi...</p>
+ <div class="score">+${pts} BALL</div>
+ ${digits[n]?`<p class="message muted">Kalit raqami: <b style="font-size:34px">${digits[n]}</b><br>Uni eslab qol yoki yuqoridagi kartochkadan ko‘r.</p>`:''}
+ <p class="center muted">Jami: ${totalScore()} ball</p>
+ <div class="center"><button onclick="${n===5?'victory()':'startLevel('+(n+1)+')'}">${n===5?'G‘ALABA':'KEYINGI BOSQICH →'}</button></div>`;
+ audio(440,.7);
+}
+
+/* 1-bosqich */
+function gameOne(){
+ found=[];seconds=40;
+ scene.innerHTML=`<h2>1. LA’NATLANGAN XONA</h2>
+ <p class="message">Xonada yashirilgan 3 ta qizil olmosni top!</p>
+ <div class="timer" id="timer">40</div>
+ <p class="center muted" id="count">OLMOSLAR: 0 / 3</p>
+ <div class="objects">${Array.from({length:9},(_,i)=>`<button class="object" onclick="findDiamond(${i})">?</button>`).join('')}</div>`;
+ const hidden=[];while(hidden.length<3){const r=Math.floor(Math.random()*9);if(!hidden.includes(r))hidden.push(r)}
+ window.hiddenDiamonds=hidden;
+ timer=setInterval(()=>{
+  seconds--;const el=document.getElementById('timer');if(el)el.textContent=seconds;
+  if(seconds<=0){clearInterval(timer);scene.innerHTML=`<h2>VAQT TUGADI!</h2><p class="message">Qasr seni yana sinaydi...</p><div class="center"><button onclick="gameOne()">QAYTA URINISH</button></div>`}
+ },1000);
+}
+function findDiamond(i){
+ const btn=document.querySelectorAll('.object')[i];
+ if(btn.classList.contains('found')||btn.dataset.empty)return;
+ if(window.hiddenDiamonds.includes(i)){
+  found.push(i);btn.textContent='💎';btn.classList.add('found');
+  document.getElementById('count').textContent='OLMOSLAR: '+found.length+' / 3';audio(600,.25);
+  if(found.length===3)finish(1,Math.max(0,seconds));
+ }else{btn.textContent='✕';btn.dataset.empty='1';btn.style.opacity='.4';audio(120,.2)}
+}
+
+/* 2-bosqich */
+function gameTwo(){
+ const correct=Math.floor(Math.random()*3);
+ scene.innerHTML=`<h2>2. ORQANGGA QARAMAGIN</h2>
+ <p class="message">Faqat bitta eshik seni qutqaradi...</p>
+ <div class="doors">${[0,1,2].map(i=>`<button class="door" onclick="chooseDoor(${i},${correct})">🚪</button>`).join('')}</div>
+ <p class="center muted" id="doorMsg">Eshiklardan birini tanla.</p>`;
+}
+function chooseDoor(i,correct){
+ if(i===correct){audio(500,.8);finish(2)}
+ else{mistakes++;audio(65,.7);document.getElementById('doorMsg').textContent='U YERDA SHARPA BOR! Boshqa eshikni tanla.'}
+}
+
+/* 3-bosqich */
+function gameThree(){
+ const symbols=['☠','☾','♜','✥','♛','⚝'];
+ sequence=Array.from({length:3},()=>symbols[Math.floor(Math.random()*symbols.length)]);selected=[];
+ scene.innerHTML=`<h2>3. LA’NATLANGAN OYNA</h2>
+ <p class="message">Belgilarni eslab qol. 4 soniyadan keyin yo‘qoladi.</p>
+ <div class="symbols" id="memory">${sequence.map(s=>`<div class="symbol">${s}</div>`).join('')}</div>
+ <div id="choices" class="symbols"></div><p class="center muted" id="memoryMsg">Kuzat...</p>`;
+ setTimeout(()=>{
+  const m=document.getElementById('memory');if(!m)return;
+  m.innerHTML='<div class="message">Belgilarni to‘g‘ri tartibda tanla.</div>';
+  document.getElementById('choices').innerHTML=symbols.map(s=>`<button class="symbol" onclick="chooseSymbol('${s}')">${s}</button>`).join('');
+ },4000);
+}
+function chooseSymbol(s){
+ selected.push(s);audio(300,.15);
+ if(selected.length===sequence.length){
+  if(selected.every((v,i)=>v===sequence[i]))finish(3);
+  else{mistakes++;selected=[];document.getElementById('memoryMsg').textContent='XATO! Yana urinib ko‘r.';audio(80,.5)}
+ }
+}
+
+/* 4-bosqich */
+function gameFour(){
+ currentWords=['QASR','LANAT','OYNA','SHARPA'];wordFound=[];picked=[];
+ const letters='QASRLANTOYNAQOGIRCHOQZXMFKP';
+ const grid=Array.from({length:8},()=>Array.from({length:8},()=>letters[Math.floor(Math.random()*letters.length)]));
+ [0,2,4,6].forEach((row,k)=>{for(let j=0;j<currentWords[k].length;j++)grid[row][j]=currentWords[k][j]});
+ window.wordGrid=grid;
+ scene.innerHTML=`<h2>4. PICHIRLAYOTGAN QO‘G‘IRCHOQ</h2>
+ <p class="message">Harflarni tartib bilan bosib, so‘zlarni top!</p>
+ <p class="center muted" id="wordTarget">IZLA: ${currentWords[0]}</p>
+ <div class="grid">${grid.flat().map((c,i)=>`<button class="cell" onclick="selectLetter(${i})">${c}</button>`).join('')}</div>
+ <p class="center muted" id="wordProgress">0 / 4 topildi</p>
+ <p class="center">Tanlangan harflar: <span id="picked"></span></p>`;
+}
+function selectLetter(i){
+ const word=currentWords[wordFound.length];
+ if(!word||picked.includes(i))return;
+ const cells=document.querySelectorAll('.cell');
+ picked.push(i);
+ const letters=picked.map(x=>window.wordGrid[Math.floor(x/8)][x%8]).join('');
+ cells[i].classList.add('selected');
+ document.getElementById('picked').textContent=letters;
+ if(letters===word){
+  picked.forEach(x=>{cells[x].classList.remove('selected');cells[x].classList.add('correct')});
+  wordFound.push(word);picked=[];
+  document.getElementById('picked').textContent='';
+  document.getElementById('wordTarget').textContent='IZLA: '+(currentWords[wordFound.length]||'TUGALLANDI');
+  document.getElementById('wordProgress').textContent=wordFound.length+' / 4 topildi';audio(550,.3);
+  if(wordFound.length===4)finish(4);
+ }else if(!word.startsWith(letters)){
+  mistakes++;picked.forEach(x=>cells[x].classList.remove('selected'));picked=[];
+  document.getElementById('picked').textContent='';audio(90,.2);
+ }
+}
+
+/* 5-bosqich */
+function gameFive(){
+ scene.innerHTML=`<h2>5. SO‘NGGI LA’NAT</h2>
+ <p class="message">Qasrning oxirgi sirini yech.</p>
+ <p class="message muted">Birinchi to‘rt bosqichda topgan raqamlaringni tartib bilan yoz.<br>Ular yuqoridagi kartochkalarda yozilgan.</p>
+ <div class="center"><input id="finalInput" maxlength="4" placeholder="••••" inputmode="numeric"><br><br>
+ <button onclick="checkCode()">PAROLNI TEKSHIRISH</button><p id="codeMsg" class="muted"></p></div>`;
+}
+function checkCode(){
+ if(document.getElementById('finalInput').value===finalCode)finish(5);
+ else{mistakes++;document.getElementById('codeMsg').textContent='Noto‘g‘ri kod! Yana urinib ko‘r.';audio(70,.5)}
+}
+
+/* Baza (Firebase) */
+let _db=null,_fs=null;
+async function getDB(){
+ if(_db)return _db;
+ if(FIREBASE_CONFIG.projectId==='BU_YERGA')return null;
+ try{
+  const app=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+  _fs=await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+  _db=_fs.getFirestore(app.initializeApp(FIREBASE_CONFIG));
+ }catch(e){console.error(e)}
+ return _db;
+}
+async function saveScore(score){
+ const db=await getDB();if(!db||!inTG)return score;
+ try{
+  const {doc,getDoc,setDoc,serverTimestamp}=_fs;const ref=doc(db,'scores',uid);
+  const old=await getDoc(ref);const prev=old.exists()?old.data().score:0;
+  if(score>prev){await setDoc(ref,{nick,score,at:serverTimestamp()});return score}
+  return prev;
+ }catch(e){return score}
+}
+async function showBoard(){
+ scene.innerHTML=`<h2>REYTING</h2><p class="center muted">Eng yaxshi 10 ta o‘yinchi</p><ol class="lb" id="lb"><li class="muted">Yuklanmoqda…</li></ol>`;
+ const ol=document.getElementById('lb');
+ const db=await getDB();
+ if(!db){ol.innerHTML='<li class="muted">Baza ulanmagan (sinov rejimi)</li>';return}
+ try{
+  const {collection,query,orderBy,limit,getDocs}=_fs;
+  const snap=await getDocs(query(collection(db,'scores'),orderBy('score','desc'),limit(10)));
+  ol.innerHTML='';
+  if(snap.empty){ol.innerHTML='<li class="muted">Hali hech kim tugatmagan. Birinchi bo‘ling!</li>';return}
+  snap.forEach(d=>{const li=document.createElement('li');li.textContent=d.data().nick;const s=document.createElement('span');s.textContent=d.data().score;li.appendChild(s);ol.appendChild(li)});
+ }catch(e){ol.innerHTML='<li class="muted">Reytingni yuklab bo‘lmadi.</li>'}
+}
+
+/* G‘alaba va omad */
+async function victory(){
+ const total=totalScore();
+ scene.innerHTML=`<h1 style="font-size:clamp(30px,6vw,55px)">TABRIKLAYMIZ!</h1>
+ <h2>SEN QASR LA’NATINI YENGDING!</h2>
+ <div class="score">${total} BALL</div>
+ <p class="center muted" id="best"></p>
+ <p class="message" id="luckMsg">Omadingni sinab ko‘r: olmos yutishing mumkin. Omad faqat bir marta beriladi.</p>
+ <p class="center muted">Sovrinlar: ${PRIZES.big.count} kishiga ${PRIZES.big.amount}, ${PRIZES.mid.count} kishiga ${PRIZES.mid.amount}, ${PRIZES.small.count} kishiga ${PRIZES.small.amount} olmos.</p>
+ <div class="center"><button id="luckBtn" onclick="drawLuck()">🎁 OMADNI SINASH</button> <button onclick="showBoard()">🏆 REYTING</button></div>`;
+ const best=await saveScore(total);
+ document.getElementById('best').textContent='Eng yaxshi natijang: '+best+' ball';
+ if(!inTG){document.getElementById('luckMsg').textContent='Omadni sinash faqat Telegram ichida ishlaydi.';document.getElementById('luckBtn').disabled=true;return}
+ const db=await getDB();
+ if(!db){document.getElementById('luckMsg').textContent='Sinov rejimi: baza ulanmagan, sovrin berilmaydi.';document.getElementById('luckBtn').disabled=true;return}
+ try{const d=await _fs.getDoc(_fs.doc(db,'draws',uid));if(d.exists())showPrize(d.data().prize)}catch(e){}
+}
+function showPrize(p){
+ document.getElementById('luckMsg').textContent=p>0?'Tabriklaymiz! Sen '+p+' olmos yutding 🎉 Admin senga Telegramda yozadi.':'Bu safar omad kulib boqmadi. Keyingi o‘yinlarda omading kelsin!';
+ document.getElementById('luckBtn').disabled=true;
+}
+async function drawLuck(){
+ const db=await getDB();if(!db||!inTG)return;
+ document.getElementById('luckBtn').disabled=true;
+ try{
+  const {doc,runTransaction,serverTimestamp}=_fs;
+  const res=await runTransaction(db,async tx=>{
+   const uref=doc(db,'draws',uid),sref=doc(db,'meta','stock');
+   const us=await tx.get(uref),ss=await tx.get(sref);
+   if(us.exists())return us.data().prize;
+   const st=ss.exists()?ss.data():{big:PRIZES.big.count,mid:PRIZES.mid.count,small:PRIZES.small.count};
+   const r=Math.random();let acc=0,key=null;
+   for(const k of ['big','mid','small']){acc+=st[k]/EXPECTED_PLAYERS;if(r<acc){key=k;break}}
+   let prize=0;if(key){st[key]-=1;prize=PRIZES[key].amount}
+   tx.set(sref,st);tx.set(uref,{nick,prize,at:serverTimestamp()});
+   return prize;
+  });
+  showPrize(res);
+ }catch(e){document.getElementById('luckMsg').textContent='Xatolik chiqdi. Internetni tekshirib, qayta urinib ko‘r.';document.getElementById('luckBtn').disabled=false}
+}
+
+function resetGame(){
+ if(confirm('Barcha o‘yin progressini o‘chirmoqchimisiz?')){
+  completed=[];levelScores={};save();startLevel(1);
+ }
+}
+renderLevels();
+</script>
+</body>
+</html>
